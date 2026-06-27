@@ -87,7 +87,7 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                log("WriteMetadata error: " + ex.Message, "ERROR");
+                log(Errors.LogMessage(ErrCode.CONFIG_ERROR, "WriteMetadata: " + ex.Message), "ERROR");
                 Console.WriteLine("WriteMetadata error: " + ex.Message);
                 return null;
             }
@@ -159,7 +159,7 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                log("CreateSave error: " + ex.Message, "ERROR");
+                log(Errors.LogMessage(ErrCode.CREATE_SAVE_FAILED, ex.Message), "ERROR");
                 Console.WriteLine("CreateSave error: " + ex.Message);
                 throw;
             }
@@ -189,7 +189,7 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                log("DeleteSave error: " + ex.Message, "ERROR");
+                log(Errors.LogMessage(ErrCode.DELETE_SAVE_FAILED, ex.Message), "ERROR");
                 Console.WriteLine("DeleteSave error: " + ex.Message);
                 throw;
             }
@@ -237,7 +237,7 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                log("RestoreSave error: " + ex.Message, "ERROR");
+                log(Errors.LogMessage(ErrCode.RESTORE_SAVE_FAILED, ex.Message), "ERROR");
                 Console.WriteLine("RestoreSave error: " + ex.Message);
                 throw;
             }

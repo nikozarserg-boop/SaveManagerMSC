@@ -35,7 +35,7 @@ namespace SaveManagerMSC
                 string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SaveManagerMSC");
                 if (!Directory.Exists(dataDir)) Directory.CreateDirectory(dataDir);
                 string logPath = Path.Combine(dataDir, "programmLog.txt");
-                File.AppendAllText(logPath, DateTime.Now.ToString("o") + " [FATAL] " + ex.ToString() + Environment.NewLine);
+                File.AppendAllText(logPath, DateTime.Now.ToString("o") + " [FATAL] " + Errors.Tag(ErrCode.UNHANDLED_EXCEPTION) + " " + ex.ToString() + Environment.NewLine);
             }
             catch { }
         }

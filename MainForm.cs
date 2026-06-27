@@ -52,7 +52,7 @@ namespace SaveManagerMSC
             txtTgt.Text = defaultSaves;
             utils_Py.log($"Default saves folder set to: {defaultSaves}", "INFO");
             } catch (Exception ex) {
-            utils_Py.log("Error setting default saves folder: " + ex.Message, "ERROR");
+            utils_Py.log(Errors.LogMessage(ErrCode.FOLDER_INIT_FAILED, ex.Message), "ERROR");
             }
             try {
                 string userName = Environment.UserName;
@@ -62,7 +62,7 @@ namespace SaveManagerMSC
                     utils_Py.log($"Auto-detected source folder: {possiblePath}", "INFO");
                 }
             } catch (Exception ex) {
-                utils_Py.log("Error auto-detecting source folder: " + ex.Message, "ERROR");
+                utils_Py.log(Errors.LogMessage(ErrCode.AUTO_DETECT_FAILED, ex.Message), "ERROR");
             }
             PopulateSaves();
         }
@@ -83,7 +83,7 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                utils_Py.log("Failed to initialize music: " + ex.Message, "ERROR");
+                utils_Py.log(Errors.LogMessage(ErrCode.MUSIC_INIT_FAILED, ex.Message), "ERROR");
             }
         }
 
@@ -98,7 +98,7 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                utils_Py.log("Failed to play music: " + ex.Message, "ERROR");
+                utils_Py.log(Errors.LogMessage(ErrCode.MUSIC_INIT_FAILED, ex.Message), "ERROR");
             }
         }
 
@@ -217,7 +217,7 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                utils_Py.log("LoadLocales error: " + ex.Message, "ERROR");
+                utils_Py.log(Errors.LogMessage(ErrCode.LOCALE_LOAD_FAILED, ex.Message), "ERROR");
             }
         }
 
@@ -294,8 +294,8 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                utils_Py.log("populate_saves error: " + ex.Message, "ERROR");
-                MessageBox.Show("populate_saves error: " + ex.Message);
+                utils_Py.log(Errors.LogMessage(ErrCode.POPULATE_FAILED, ex.Message), "ERROR");
+                MessageBox.Show(Errors.MessageBoxText(ErrCode.POPULATE_FAILED, ex.Message));
             }
         }
 
@@ -319,7 +319,7 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Create error: " + ex.Message);
+                MessageBox.Show(Errors.MessageBoxText(ErrCode.CREATE_SAVE_FAILED, ex.Message));
             }
             finally
             {
@@ -347,7 +347,7 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Delete error: " + ex.Message);
+                MessageBox.Show(Errors.MessageBoxText(ErrCode.DELETE_SAVE_FAILED, ex.Message));
             }
         }
 
@@ -378,7 +378,7 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Restore error: " + ex.Message);
+                MessageBox.Show(Errors.MessageBoxText(ErrCode.RESTORE_SAVE_FAILED, ex.Message));
             }
             finally
             {
@@ -394,7 +394,7 @@ namespace SaveManagerMSC
                 string logFile = Path.Combine(dataDir, "programmLog.txt");
                 if (!File.Exists(logFile))
                 {
-                    MessageBox.Show("Log not found: " + logFile);
+                    MessageBox.Show(Errors.MessageBoxText(ErrCode.LOG_NOT_FOUND, "Log not found: " + logFile));
                     return;
                 }
                 ProcessStartInfo psi = new ProcessStartInfo(logFile) { UseShellExecute = true };
@@ -402,7 +402,7 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Open log error: " + ex.Message);
+                MessageBox.Show(Errors.MessageBoxText(ErrCode.OPEN_LOG_FAILED, ex.Message));
             }
         }
 
@@ -437,8 +437,8 @@ namespace SaveManagerMSC
             }
             catch (Exception ex)
             {
-                utils_Py.log("Show details error: " + ex.Message, "ERROR");
-                MessageBox.Show("Show details error: " + ex.Message);
+                utils_Py.log(Errors.LogMessage(ErrCode.SHOW_DETAILS_FAILED, ex.Message), "ERROR");
+                MessageBox.Show(Errors.MessageBoxText(ErrCode.SHOW_DETAILS_FAILED, ex.Message));
             }
         }
 
@@ -447,12 +447,12 @@ namespace SaveManagerMSC
             try
             {
                 string path = Path.Combine(AppContext.BaseDirectory, "ReadMe.txt");
-                if (!File.Exists(path)) { MessageBox.Show("ReadMe not found: " + path); return; }
+                if (!File.Exists(path)) { MessageBox.Show(Errors.MessageBoxText(ErrCode.README_NOT_FOUND, "ReadMe not found: " + path)); return; }
                 Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Open ReadMe error: " + ex.Message);
+                MessageBox.Show(Errors.MessageBoxText(ErrCode.README_NOT_FOUND, "Open ReadMe error: " + ex.Message));
             }
         }
     }
