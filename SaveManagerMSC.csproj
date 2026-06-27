@@ -10,19 +10,22 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <OutputPath>Output</OutputPath>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <BaseIntermediateOutputPath>obj</BaseIntermediateOutputPath>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <UseAppHost>true</UseAppHost>
+    <PublishTrimmed>false</PublishTrimmed>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <OptimizationPreference>Size</OptimizationPreference>
+  </PropertyGroup>
+
   <ItemGroup>
-    <None Update="assets\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="programmdata\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <EmbeddedResource Include="assets\**\*" />
   </ItemGroup>
 
 </Project>

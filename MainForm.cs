@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
@@ -11,6 +12,12 @@ using System.Timers;
 
 namespace SaveManagerMSC
 {
+    public enum AppTheme
+    {
+        Light,
+        Dark
+    }
+
     public class MainForm : Form
     {
         private ListBox lstSaves;
@@ -22,6 +29,8 @@ namespace SaveManagerMSC
         private GroupBox grpSource, grpTarget, grpActions, grpSaves;
 
         private Dictionary<string, string> texts = new Dictionary<string, string>();
+        private AppTheme currentTheme = AppTheme.Light;
+        private ComboBox cmbTheme;
 
         private const int MCI_OPEN = 0x803;
         private const int MCI_PLAY = 0x806;
@@ -32,16 +41,24 @@ namespace SaveManagerMSC
         [DllImport("winmm.dll", CharSet = CharSet.Auto)]
         private static extern int mciSendString(string lpstrCommand, string lpstrReturnString, int uReturnLength, IntPtr hwndCallback);
 
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute, ref int pvAttribute, int cbAttribute);
+
+        private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+
         private string musicFile;
         private System.Timers.Timer musicTimer;
 
         public MainForm()
         {
             InitializeComponent();
-            try {
-                var iconPath = Path.Combine(AppContext.BaseDirectory, "assets", "icon.ico");
-                if (File.Exists(iconPath)) this.Icon = new Icon(iconPath);
-            } catch { }
+            try
+            {
+                var asm = Assembly.GetExecutingAssembly();
+                using var stream = asm.GetManifestResourceStream("SaveManagerMSC.assets.icon.ico");
+                if (stream != null) this.Icon = new Icon(stream);
+            }
+            catch { }
 
             InitializeMusic();
             LoadLocales();
@@ -71,15 +88,19 @@ namespace SaveManagerMSC
         {
             try
             {
-                string musicPath = Path.Combine(AppContext.BaseDirectory, "assets", "MainTheme.mp3");
-                if (File.Exists(musicPath))
-                {
-                    musicFile = musicPath;
-                    PlayMusicLoop();
-                    musicTimer = new System.Timers.Timer(1000);
-                    musicTimer.Elapsed += MusicTimer_Elapsed;
-                    musicTimer.Start();
-                }
+                var asm = Assembly.GetExecutingAssembly();
+                using var stream = asm.GetManifestResourceStream("SaveManagerMSC.assets.MainTheme.mp3");
+                if (stream == null) return;
+
+                string tempPath = Path.Combine(Path.GetTempPath(), "SaveManagerMSC_MainTheme.mp3");
+                using var file = File.Create(tempPath);
+                stream.CopyTo(file);
+                musicFile = tempPath;
+
+                PlayMusicLoop();
+                musicTimer = new System.Timers.Timer(1000);
+                musicTimer.Elapsed += MusicTimer_Elapsed;
+                musicTimer.Start();
             }
             catch (Exception ex)
             {
@@ -108,6 +129,12 @@ namespace SaveManagerMSC
             {
                 mciSendString("stop MainTheme", "", 0, IntPtr.Zero);
                 mciSendString("close MainTheme", "", 0, IntPtr.Zero);
+            }
+            catch { }
+            try
+            {
+                if (!string.IsNullOrEmpty(musicFile) && File.Exists(musicFile))
+                    File.Delete(musicFile);
             }
             catch { }
         }
@@ -186,9 +213,15 @@ namespace SaveManagerMSC
             btnOpenReadme.Click += (s,e) => OpenReadme();
             cmbLang = new ComboBox() { Left = 680, Top = 10, Width = 100, DropDownStyle = ComboBoxStyle.DropDownList, BackColor = Color.White };
             cmbLang.SelectedIndexChanged += (s,e) => { if (cmbLang.SelectedItem!=null) SetLang(cmbLang.SelectedItem.ToString()); };
+            cmbTheme = new ComboBox() { Left = 570, Top = 10, Width = 100, DropDownStyle = ComboBoxStyle.DropDownList, BackColor = Color.White };
+            cmbTheme.Items.AddRange(new object[] { texts.GetValueOrDefault("theme_light", "Light"), texts.GetValueOrDefault("theme_dark", "Dark") });
+            cmbTheme.SelectedIndexChanged += (s,e) => {
+                if (cmbTheme.SelectedItem != null)
+                    SetTheme(cmbTheme.SelectedItem.ToString() == texts.GetValueOrDefault("theme_dark", "Dark") ? AppTheme.Dark : AppTheme.Light);
+            };
             progress = new ProgressBar() { Left = 10, Top = 35, Width = 550, Height = 20, Visible = false, ForeColor = Color.DodgerBlue };
             lblStatus = new Label() { Left = 230, Top = 12, Width = 300, Text = "Ready", Font = new Font("Segoe UI", 9F, FontStyle.Italic), ForeColor = Color.DarkGreen };
-            pnlBottom.Controls.AddRange(new Control[] { btnOpenLog, btnOpenReadme, cmbLang, progress, lblStatus });
+            pnlBottom.Controls.AddRange(new Control[] { btnOpenLog, btnOpenReadme, cmbTheme, cmbLang, progress, lblStatus });
 
             this.Controls.AddRange(new Control[] { picLogo, grpSource, grpTarget, grpActions, grpSaves, pnlBottom });
         }
@@ -214,6 +247,18 @@ namespace SaveManagerMSC
                 cmbLang.SelectedItem = lang;
                 cmbLang.SelectedIndexChanged += (s,e) => { if (cmbLang.SelectedItem!=null) SetLang(cmbLang.SelectedItem.ToString()); };
                 LoadLocale(lang);
+                string themeStr = cfg.ContainsKey("theme") ? cfg["theme"].ToString() : "Light";
+                string themeDarkText = texts.GetValueOrDefault("theme_dark", "Dark");
+                cmbTheme.SelectedIndexChanged -= (s,e) => {
+                    if (cmbTheme.SelectedItem != null)
+                        SetTheme(cmbTheme.SelectedItem.ToString() == themeDarkText ? AppTheme.Dark : AppTheme.Light);
+                };
+                cmbTheme.SelectedItem = themeStr == "Dark" ? themeDarkText : texts.GetValueOrDefault("theme_light", "Light");
+                cmbTheme.SelectedIndexChanged += (s,e) => {
+                    if (cmbTheme.SelectedItem != null)
+                        SetTheme(cmbTheme.SelectedItem.ToString() == themeDarkText ? AppTheme.Dark : AppTheme.Light);
+                };
+                if (themeStr == "Dark") SetTheme(AppTheme.Dark);
             }
             catch (Exception ex)
             {
@@ -259,6 +304,90 @@ namespace SaveManagerMSC
         btnBrowseSrc.Text = texts.GetValueOrDefault("browse_button","Browse...");
             btnBrowseTgt.Text = texts.GetValueOrDefault("browse_button","Browse...");
             lblStatus.Text = "";
+        }
+
+        private void SetTheme(AppTheme theme)
+        {
+            currentTheme = theme;
+            try
+            {
+                var cfg = SaveManagerMSC.main_Py.read_config() as Dictionary<string, object> ?? new Dictionary<string, object>();
+                cfg["theme"] = theme == AppTheme.Dark ? "Dark" : "Light";
+                SaveManagerMSC.main_Py.write_config(cfg);
+            }
+            catch { }
+            ApplyTheme();
+        }
+
+        private void ApplyTheme()
+        {
+            bool isDark = currentTheme == AppTheme.Dark;
+            Color bg = isDark ? Color.FromArgb(30, 30, 30) : Color.FromArgb(240, 248, 255);
+            Color groupBg = isDark ? Color.FromArgb(45, 45, 45) : Color.WhiteSmoke;
+            Color fg = isDark ? Color.FromArgb(220, 220, 220) : Color.Black;
+            Color inputBg = isDark ? Color.FromArgb(60, 60, 60) : Color.White;
+            Color btnBg = isDark ? Color.FromArgb(60, 60, 60) : Color.LightSteelBlue;
+            Color btnFg = isDark ? Color.FromArgb(220, 220, 220) : Color.Black;
+            Color statusFg = isDark ? Color.FromArgb(100, 200, 100) : Color.DarkGreen;
+
+            this.BackColor = bg;
+            this.ForeColor = fg;
+
+            foreach (Control c in this.Controls)
+                ApplyThemeToControl(c, isDark, bg, groupBg, fg, inputBg, btnBg, btnFg, statusFg);
+
+            if (cmbTheme != null)
+            {
+                cmbTheme.BackColor = inputBg;
+                cmbTheme.ForeColor = fg;
+            }
+        }
+
+        private void ApplyThemeToControl(Control parent, bool isDark, Color bg, Color groupBg, Color fg, Color inputBg, Color btnBg, Color btnFg, Color statusFg)
+        {
+            if (parent is GroupBox grp)
+            {
+                grp.BackColor = groupBg;
+                grp.ForeColor = fg;
+            }
+            else if (parent is Panel pnl)
+            {
+                pnl.BackColor = groupBg;
+            }
+            else if (parent is Button btn && btn != btnCreate && btn != btnDelete && btn != btnRestore)
+            {
+                btn.BackColor = btnBg;
+                btn.ForeColor = btnFg;
+                btn.FlatStyle = FlatStyle.Flat;
+                btn.FlatAppearance.BorderColor = isDark ? Color.FromArgb(80, 80, 80) : Color.LightSteelBlue;
+            }
+            else if (parent is TextBox txt)
+            {
+                txt.BackColor = inputBg;
+                txt.ForeColor = fg;
+                txt.BorderStyle = BorderStyle.FixedSingle;
+            }
+            else if (parent is ListBox lst)
+            {
+                lst.BackColor = inputBg;
+                lst.ForeColor = fg;
+            }
+            else if (parent is ComboBox cmb)
+            {
+                cmb.BackColor = inputBg;
+                cmb.ForeColor = fg;
+            }
+            else if (parent is Label lbl && lbl != lblStatus && lbl != lblExample)
+            {
+                lbl.ForeColor = fg;
+            }
+            else if (parent is ProgressBar pb)
+            {
+                pb.ForeColor = Color.DodgerBlue;
+            }
+
+            foreach (Control child in parent.Controls)
+                ApplyThemeToControl(child, isDark, bg, groupBg, fg, inputBg, btnBg, btnFg, statusFg);
         }
 
         private void SetLang(string lang)

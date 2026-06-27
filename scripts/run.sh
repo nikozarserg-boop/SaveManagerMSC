@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPTS_DIR/.." && pwd)"
 CONFIG="${1:-Release}"
-APP_PATH="$PROJECT_DIR/Output/SaveManagerMSC.dll"
+APP_PATH="$PROJECT_DIR/Output/SaveManagerMSC.exe"
 
 if [ ! -f "$APP_PATH" ]; then
     echo "Build not found at: $APP_PATH"
